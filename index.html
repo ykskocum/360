@@ -337,7 +337,7 @@ tbody tr:hover td{background:#fafbfc}
 
 /* === Rapor/Karne katmanı === */
 .report-shell{background:#fff;border:1px solid #e5e7eb;border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(15,23,42,.10)}
-.report-hero{padding:30px 34px;background:linear-gradient(135deg,#13243d,#234f80);color:#fff!important}.report-hero h2{color:#fff!important;font-weight:900}.report-hero .eyebrow{color:#dbeafe!important}.report-meta{color:#dbeafe!important;font-size:13px}
+.report-hero{padding:24px 26px;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff}
 .report-hero .eyebrow{color:#cbd5e1}.report-hero h2{margin:5px 0 3px;font-size:27px}.report-meta{color:#dbeafe;font-size:13px}
 .report-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px 22px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
 .report-stat{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px}.report-stat .label{font-size:12px;color:#64748b}.report-stat .value{font-size:22px;font-weight:800;margin-top:4px}
@@ -357,13 +357,6 @@ tbody tr:hover td{background:#fafbfc}
 <style>
 /* Veli karnesi - sade, şık, kurumsal ve WhatsApp/telefon uyumlu */
 #examReportModal .modalbox{max-width:1120px!important;width:min(1120px,calc(100vw - 28px));}
-#examReportModal .report-shell .report-hero h2{color:#fff!important;}
-#examReportModal .report-shell .report-hero .report-meta{color:#dbeafe!important;}
-#examReportModal .report-shell .report-hero .eyebrow{color:#dbeafe!important;}
-#examReportModal .report-shell .report-stat-grid{background:#f6f8fb!important;}
-#examReportModal .report-shell .report-stat{box-shadow:0 2px 8px rgba(15,23,42,.035)!important;}
-#examReportModal .report-shell .report-body{background:#fff!important;}
-
 #examReportModal #examReportBody{overflow:auto;max-height:calc(100vh - 170px);background:#f4f6f9;border-radius:16px;}
 #examReportModal .report-actions{align-items:center;flex-wrap:wrap;}
 #examReportModal .report-actions .btn{transition:.15s ease;border:1px solid #d8e0e9;background:#fff;color:#334155;box-shadow:none;}
@@ -390,8 +383,59 @@ tbody tr:hover td{background:#fafbfc}
 @media(max-width:700px){#examReportModal .modalbox{width:calc(100vw - 12px)!important}.report-parent{width:100%!important}.parent-profile{grid-template-columns:1fr!important}.parent-profile-side,.parent-current{min-height:auto}.report-parent-hero{padding:28px 22px 24px!important}.report-parent-hero h2{font-size:27px!important}.parent-section-title{margin-left:12px!important;margin-right:12px!important}.parent-chart-only{padding-left:12px!important;padding-right:12px!important}.parent-subject-grid{padding-left:12px!important;padding-right:12px!important;grid-template-columns:1fr!important}.parent-footer{margin-left:12px!important;margin-right:12px!important}}
 </style>
 </style>
+<style id="login-gate-style">
+#loginGate{position:fixed;inset:0;z-index:999999;background:linear-gradient(135deg,#101828,#263b63);display:flex;align-items:center;justify-content:center;padding:20px}
+#loginGate .login-box{width:min(420px,100%);background:#fff;border-radius:22px;padding:32px;box-shadow:0 24px 70px rgba(0,0,0,.28);text-align:center}
+#loginGate .login-logo{font-size:28px;font-weight:800;color:#173f6d;margin-bottom:6px}
+#loginGate .login-sub{color:#667085;margin-bottom:24px}
+#loginGate .login-field{text-align:left;margin:14px 0}
+#loginGate .login-field label{display:block;font-weight:700;margin-bottom:7px;color:#344054}
+#loginGate .login-field input{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #d0d5dd;border-radius:10px;font-size:16px;outline:none}
+#loginGate .login-field input:focus{border-color:#6d4aff;box-shadow:0 0 0 3px rgba(109,74,255,.12)}
+#loginGate .login-btn{width:100%;border:0;border-radius:11px;padding:13px 16px;background:#6d4aff;color:#fff;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px}
+#loginGate .login-error{min-height:22px;color:#d92d20;font-size:13px;font-weight:700;margin-top:10px}
+body.login-locked{overflow:hidden}
+</style>
 </head>
 <body>
+<div id="loginGate" aria-modal="true" role="dialog">
+  <div class="login-box">
+    <div class="login-logo">YKS KOÇUM</div>
+    <div class="login-sub">Devam etmek için giriş yapın</div>
+    <form id="loginForm" autocomplete="off">
+      <div class="login-field"><label for="loginUser">Kullanıcı Adı</label><input id="loginUser" type="text" autocomplete="username" required></div>
+      <div class="login-field"><label for="loginPass">Şifre</label><input id="loginPass" type="password" autocomplete="current-password" required></div>
+      <button class="login-btn" type="submit">Giriş Yap</button>
+      <div id="loginError" class="login-error"></div>
+    </form>
+  </div>
+</div>
+<script>
+(function(){
+  document.body.classList.add('login-locked');
+  const gate=document.getElementById('loginGate');
+  const form=document.getElementById('loginForm');
+  const user=document.getElementById('loginUser');
+  const pass=document.getElementById('loginPass');
+  const error=document.getElementById('loginError');
+  const KEY='yksKocumLoginOk';
+  function unlock(){ gate.style.display='none'; document.body.classList.remove('login-locked'); }
+  if(sessionStorage.getItem(KEY)==='1') unlock();
+  form.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    if(user.value.trim()==='akdem' && pass.value==='159263'){
+      sessionStorage.setItem(KEY,'1');
+      error.textContent='';
+      unlock();
+    }else{
+      error.textContent='Kullanıcı adı veya şifre hatalı.';
+      pass.value='';
+      pass.focus();
+    }
+  });
+})();
+</script>
+
 <div class="app">
 <aside class="sidebar">
   <div class="brand">YKS KOÇUM<small>Öğrenci takip ve rehberlik paneli</small></div>
@@ -1299,8 +1343,8 @@ function reportProgressChart(){
  const y=v=>top+chartH-(Math.max(0,v)/max)*chartH;
  const grid=[0,Math.round(max*.25),Math.round(max*.5),Math.round(max*.75),Math.round(max)];
  const totalPoints=data.map((x,i)=>`${xs[i]},${y(x.total)}`).join(' ');
- const tytBars=data.map((x,i)=>{const bw=Math.max(18,Math.min(44,step*.18));const xx=xs[i]-bw-3;const yy=y(x.tyt);return `<rect x="${xx.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${(top+chartH-yy).toFixed(1)}" rx="7" class="chart-tyt"/>`}).join('');
- const aytBars=data.map((x,i)=>{const bw=Math.max(18,Math.min(44,step*.18));const xx=xs[i]+3;const yy=y(x.ayt);return `<rect x="${xx.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${(top+chartH-yy).toFixed(1)}" rx="7" class="chart-ayt"/>`}).join('');
+ const tytBars=data.map((x,i)=>{const bw=Math.max(18,Math.min(44,step*.18));const xx=xs[i]-bw-3;const yy=y(x.tyt);return `<rect x="${xx.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${(top+chartH-yy).toFixed(1)}" rx="7" class="chart-tyt"/><text x="${(xx+bw/2).toFixed(1)}" y="${Math.max(18,yy-8).toFixed(1)}" text-anchor="middle" class="chart-val chart-tyt-text">${x.tyt.toFixed(2)}</text>`}).join('');
+ const aytBars=data.map((x,i)=>{const bw=Math.max(18,Math.min(44,step*.18));const xx=xs[i]+3;const yy=y(x.ayt);return `<rect x="${xx.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${(top+chartH-yy).toFixed(1)}" rx="7" class="chart-ayt"/><text x="${(xx+bw/2).toFixed(1)}" y="${Math.max(18,yy-8).toFixed(1)}" text-anchor="middle" class="chart-val chart-ayt-text">${x.ayt.toFixed(2)}</text>`}).join('');
  const labels=data.map((x,i)=>{const d=String(x.e.date||'').split('-').reverse().join('.');return `<text x="${xs[i].toFixed(1)}" y="${H-72}" text-anchor="middle" class="chart-label"><tspan x="${xs[i].toFixed(1)}" dy="0">${x.index}. Deneme</tspan><tspan x="${xs[i].toFixed(1)}" dy="22">${esc(d)}</tspan><tspan x="${xs[i].toFixed(1)}" dy="20">${esc(x.e.type||'YKS')}</tspan></text>`}).join('');
  const gridHtml=grid.map(v=>`<line x1="${left}" y1="${y(v)}" x2="${W-right}" y2="${y(v)}" class="chart-grid"/><text x="${left-10}" y="${y(v)+5}" text-anchor="end" class="chart-axis">${v}</text>`).join('');
  return `<div class="parent-chart-wrap"><div class="parent-chart-head"><div><b>Tüm Deneme Sonuçları</b><div class="small muted">Öğrencinin girdiği denemeler ve netlerinin gelişimi</div></div><div class="chart-legend"><span><i class="legend-total"></i>Toplam Net</span><span><i class="legend-tyt"></i>TYT Net</span><span><i class="legend-ayt"></i>AYT Net</span></div></div><svg class="parent-progress-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Deneme net gelişim grafiği">${gridHtml}${tytBars}${aytBars}<polyline points="${totalPoints}" class="chart-total-line"/>${data.map((x,i)=>`<circle cx="${xs[i]}" cy="${y(x.total)}" r="7" class="chart-total-dot"/><text x="${xs[i]}" y="${y(x.total)-14}" text-anchor="middle" class="chart-total-value">${x.total.toFixed(2)}</text>`).join('')}${labels}</svg></div>`;
@@ -1344,7 +1388,7 @@ function printExamReport(){
  const w=window.open('','_blank','width=900,height=1100');
  if(!w)return alert('Yazdırma penceresi açılamadı. Tarayıcı açılır pencereyi engelliyor olabilir.');
  const css=`<style>
- *{box-sizing:border-box}body{margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;color:#0f172a}.print-wrap{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:10mm}.report-actions{display:none!important}.report-shell{background:#fff;border:1px solid #e5e7eb;border-radius:20px;overflow:hidden}.report-hero{padding:30px 34px;background:linear-gradient(135deg,#13243d,#234f80);color:#fff!important}.report-hero h2{color:#fff!important;font-weight:900}.report-hero .eyebrow{color:#dbeafe!important}.report-meta{color:#dbeafe!important;font-size:13px}.report-hero .eyebrow{color:#cbd5e1}.report-hero h2{margin:5px 0 3px;font-size:27px}.report-meta{color:#dbeafe;font-size:13px}.report-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px 22px;background:#f8fafc;border-bottom:1px solid #e5e7eb}.report-stat{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px}.report-stat .label{font-size:12px;color:#64748b}.report-stat .value{font-size:22px;font-weight:800;margin-top:4px}.report-body{padding:22px}.report-section{border:1px solid #e5e7eb;border-radius:15px;padding:16px;margin-bottom:14px}.report-section h4{margin:0 0 12px;font-size:15px}.report-subject-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.report-subject{border:1px solid #edf0f4;border-radius:12px;padding:12px;background:#fbfdff}.report-subject .top{display:flex;justify-content:space-between;gap:10px;align-items:center}.report-meter{height:7px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:8px}.report-meter i{display:block;height:100%;background:#2563eb;border-radius:99px}.report-topic{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eef2f7}.report-footer{padding:15px 22px;border-top:1px solid #e5e7eb;background:#f8fafc;color:#64748b;font-size:11px;text-align:center}.report-note{background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:13px}.report-good{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:13px}.report-attention{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:13px}.small{font-size:12px}
+ *{box-sizing:border-box}body{margin:0;background:#eef2f7;font-family:Arial,Helvetica,sans-serif;color:#0f172a}.print-wrap{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:10mm}.report-actions{display:none!important}.report-shell{background:#fff;border:1px solid #e5e7eb;border-radius:20px;overflow:hidden}.report-hero{padding:24px 26px;background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff}.report-hero .eyebrow{color:#cbd5e1}.report-hero h2{margin:5px 0 3px;font-size:27px}.report-meta{color:#dbeafe;font-size:13px}.report-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px 22px;background:#f8fafc;border-bottom:1px solid #e5e7eb}.report-stat{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px}.report-stat .label{font-size:12px;color:#64748b}.report-stat .value{font-size:22px;font-weight:800;margin-top:4px}.report-body{padding:22px}.report-section{border:1px solid #e5e7eb;border-radius:15px;padding:16px;margin-bottom:14px}.report-section h4{margin:0 0 12px;font-size:15px}.report-subject-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.report-subject{border:1px solid #edf0f4;border-radius:12px;padding:12px;background:#fbfdff}.report-subject .top{display:flex;justify-content:space-between;gap:10px;align-items:center}.report-meter{height:7px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:8px}.report-meter i{display:block;height:100%;background:#2563eb;border-radius:99px}.report-topic{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eef2f7}.report-footer{padding:15px 22px;border-top:1px solid #e5e7eb;background:#f8fafc;color:#64748b;font-size:11px;text-align:center}.report-note{background:#f0f9ff;border:1px solid #bae6fd;border-radius:12px;padding:13px}.report-good{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:13px}.report-attention{background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:13px}.small{font-size:12px}
 .report-parent{width:1080px;min-height:0;border:0;border-radius:0;background:#fff;overflow:hidden;color:#172033}
 .report-parent-hero{padding:48px 58px 38px;background:linear-gradient(135deg,#13243d,#234f80);color:#fff}
 .report-parent-hero .parent-brand{font-size:22px;font-weight:900;letter-spacing:2px;margin-bottom:24px}
