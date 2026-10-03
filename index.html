@@ -1044,26 +1044,66 @@ try{db=JSON.parse(localStorage.getItem(KEY))||db}catch(e){window.__yksData=windo
 let cloudUser=null;
 let cloudSaveTimer=null;
 let cloudLoading=false;
+let cloudLoadSucceeded=false;
 async function cloudLoad(){
  const client=window.__yksSupabase; if(!client)return false;
  cloudLoading=true;
  try{
-  const {data:{user},error:ue}=await client.auth.getUser();
-  if(ue||!user) return false;
-  cloudUser=user;
-  const {data,error:rowError}=await client.from('app_data').select('data').eq('owner_id',user.id).maybeSingle();
-  if(rowError) throw rowError;
-  if(data?.data && typeof data.data==='object'){ db=data.data; cleanLegacyV2TopicData(); localStorage.setItem(KEY,JSON.stringify(db)); }
-  else {
-   const {error:ins}=await client.from('app_data').upsert({owner_id:user.id,data:db,updated_at:new Date().toISOString()},{onConflict:'owner_id'});
-   if(ins) throw ins;
+  // Oturumun hazır olmasını bekle. Böylece sayfa açılışındaki auth yarış koşulu önlenir.
+  const {data:sessionData,error:se}=await client.auth.getSession();
+  if(se)throw se;
+  let user=sessionData?.session?.user||null;
+  if(!user){
+    const gu=await client.auth.getUser();
+    if(gu.error)throw gu.error;
+    user=gu.data?.user||null;
   }
+  if(!user)return false;
+  cloudUser=user;
+
+  const {data,error:rowError}=await client.from('app_data').select('owner_id,data,updated_at').eq('owner_id',user.id).maybeSingle();
+  if(rowError)throw rowError;
+
+  // KRİTİK: Bulutta kayıt yoksa yerel boş veriyi otomatik olarak Supabase'e YAZMA.
+  // Böylece yanlış hesap/oturum halinde mevcut veri üzerine yazılması engellenir.
+  if(!data || !data.data){
+    const el=document.getElementById('cloudStatus');
+    if(el)el.textContent='⚠️ Bu koç hesabına ait bulut verisi bulunamadı. Otomatik kayıt durduruldu.';
+    cloudLoadSucceeded=false;
+    return false;
+  }
+
+  let incoming=data.data;
+  if(typeof incoming==='string'){
+    try{incoming=JSON.parse(incoming)}catch(_){throw new Error('Buluttaki data alanı geçerli JSON değil.');}
+  }
+  if(!incoming || typeof incoming!=='object')throw new Error('Buluttaki uygulama verisi okunamadı.');
+
+  // Eski/yeni sürüm farklarında eksik alanlar yüzünden veri görünmez olmasın.
+  const defaults={students:[],exams:[],studies:[],tasks:[],plans:[],wrongs:[],topics:[],guidance:[],settings:{examType:'YKS 2027',examDate:'2027-06-19'},selected:null};
+  db={...defaults,...incoming,settings:{...defaults.settings,...(incoming.settings||{})}};
+  ['students','exams','studies','tasks','plans','wrongs','topics','guidance'].forEach(k=>{if(!Array.isArray(db[k]))db[k]=[];});
+
+  // Kayıtlı selected artık yoksa ilk öğrenciyi seç.
+  if(!db.students.some(x=>x?.id===db.selected))db.selected=db.students[0]?.id||null;
+
+  cleanLegacyV2TopicData();
+  try{localStorage.setItem(KEY,JSON.stringify(db));}catch(_){}
+  cloudLoadSucceeded=true;
+
+  const el=document.getElementById('cloudStatus');
+  if(el)el.textContent=`☁️ Buluttan yüklendi · ${db.students.length} öğrenci · ${db.exams.length} deneme`;
   return true;
- }catch(err){ console.error('Bulut yükleme hatası',err); const el=document.getElementById('cloudStatus'); if(el)el.textContent='Bulut bağlantısında hata: '+(err.message||err); return false; }
- finally{cloudLoading=false;}
+ }catch(err){
+  cloudLoadSucceeded=false;
+  console.error('Bulut yükleme hatası',err);
+  const el=document.getElementById('cloudStatus');
+  if(el)el.textContent='⚠️ Bulut yükleme hatası: '+(err.message||err);
+  return false;
+ }finally{cloudLoading=false;}
 }
 async function cloudSaveNow(){
- const client=window.__yksSupabase; if(!client||!cloudUser)return;
+ const client=window.__yksSupabase; if(!client||!cloudUser||!cloudLoadSucceeded)return;
  try{
   const {error}=await client.from('app_data').upsert({owner_id:cloudUser.id,data:db,updated_at:new Date().toISOString()},{onConflict:'owner_id'});
   if(error)throw error;
@@ -1072,15 +1112,21 @@ async function cloudSaveNow(){
 }
 function scheduleCloudSave(){
  if(document.body.classList.contains('student-mode'))return;
- if(!window.__yksSupabase||!cloudUser||cloudLoading)return;
+ if(!window.__yksSupabase||!cloudUser||cloudLoading||!cloudLoadSucceeded)return;
  clearTimeout(cloudSaveTimer); cloudSaveTimer=setTimeout(cloudSaveNow,500);
 }
 window.cloudSyncNow=async()=>{if(!window.__yksSupabase)return alert('Supabase bağlantısı henüz yapılandırılmamış.');if(!cloudUser)return alert('Önce bulut hesabıyla giriş yapın.');await cloudSaveNow();alert('Veriler buluta senkronize edildi.');};
 window.cloudLogout=async()=>{if(window.__yksSupabase){await window.__yksSupabase.auth.signOut();location.reload();}else alert('Bulut hesabı bağlı değil.');};
 window.__yksCloudStart=async()=>{
  if(window.__yksSupabase){
-  await cloudLoad();
-  const el=document.getElementById('cloudStatus'); if(el&&cloudUser)el.textContent='☁️ Bağlı · '+(cloudUser.email||'hesap');
+  const ok=await cloudLoad();
+  if(ok){
+    render();
+    return;
+  }
+  // Bulut okunamadıysa ekranda yerel veriyi gösterebiliriz ama Supabase'e otomatik yazmayız.
+  render();
+  return;
  }
  render();
 };
@@ -1104,11 +1150,11 @@ function nav(page){if(document.body.classList.contains('student-mode')&&page!=='
 function initNav(){$$('#nav button').forEach(b=>b.addEventListener('click',()=>{nav(b.dataset.page);document.body.classList.remove('mobile-nav-open')}));const mb=document.getElementById('mobileMenuBtn'),ov=document.getElementById('mobileNavOverlay');if(mb)mb.addEventListener('click',()=>document.body.classList.toggle('mobile-nav-open'));if(ov)ov.addEventListener('click',()=>document.body.classList.remove('mobile-nav-open'));nav('dashboard')}
 function formData(form){return Object.fromEntries(new FormData(form).entries())}
 function selectedRecords(key){return (db[key]||[]).filter(x=>x.studentId===sid())}
-function exams(){return selectedRecords('exams').sort((a,b)=>a.date.localeCompare(b.date))}
-function studies(){return selectedRecords('studies').sort((a,b)=>b.date.localeCompare(a.date))}
-function tasks(){return selectedRecords('tasks').sort((a,b)=>a.due.localeCompare(b.due))}
-function plans(){return selectedRecords('plans').sort((a,b)=>a.date.localeCompare(b.date))}
-function wrongs(){return selectedRecords('wrongs').sort((a,b)=>a.reviewDate.localeCompare(b.reviewDate))}
+function exams(){return selectedRecords('exams').sort((a,b)=>String(a.date??'').localeCompare(String(b.date??'')))}
+function studies(){return selectedRecords('studies').sort((a,b)=>String(b.date??'').localeCompare(String(a.date??'')))}
+function tasks(){return selectedRecords('tasks').sort((a,b)=>String(a.due??'').localeCompare(b.due))}
+function plans(){return selectedRecords('plans').sort((a,b)=>String(a.date??'').localeCompare(String(b.date??'')))}
+function wrongs(){return selectedRecords('wrongs').sort((a,b)=>String(a.reviewDate??'').localeCompare(String(b.reviewDate??'')))}
 const EXAM_TOPIC_IMPORTANCE={
  'TYT|Matematik-1':[
   {topic:'Sayı Kümeleri',avg:5.67,years:{2018:5,2019:7,2020:4,2021:5,2022:7,2023:6,2024:6,2025:6,2026:5}},
@@ -1408,7 +1454,7 @@ function topicMastery(){
  return Object.values(map).map(m=>{const pct=Math.max(5,Math.min(100,Math.round(45+(m.positive*10)-(m.errors*9)-(m.review*5))));return {...m,pct}}).sort((a,b)=>a.pct-b.pct);
 }
 
-function renderGuidance(){const a=(db.guidance||[]).filter(x=>x.studentId===sid()).sort((a,b)=>b.date.localeCompare(a.date));$('#guidanceTable').innerHTML=a.length?`<table><thead><tr><th>Tarih</th><th>Tür</th><th>Karar</th><th>Kontrol</th><th>Durum</th><th>Geri dönüş</th><th></th></tr></thead><tbody>${a.map(x=>`<tr><td>${x.date}</td><td>${esc(x.type)}</td><td>${esc(x.action)}</td><td>${esc(x.checkDate||'-')}</td><td>${esc(x.status)}</td><td>${esc(x.feedback||'—')}</td><td><button class="btn danger" data-action="delete" data-type="guidance" data-id="${x.id}">Sil</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Rehberlik kaydı yok.</div>'}
+function renderGuidance(){const a=(db.guidance||[]).filter(x=>x.studentId===sid()).sort((a,b)=>String(b.date??'').localeCompare(String(a.date??'')));$('#guidanceTable').innerHTML=a.length?`<table><thead><tr><th>Tarih</th><th>Tür</th><th>Karar</th><th>Kontrol</th><th>Durum</th><th>Geri dönüş</th><th></th></tr></thead><tbody>${a.map(x=>`<tr><td>${x.date}</td><td>${esc(x.type)}</td><td>${esc(x.action)}</td><td>${esc(x.checkDate||'-')}</td><td>${esc(x.status)}</td><td>${esc(x.feedback||'—')}</td><td><button class="btn danger" data-action="delete" data-type="guidance" data-id="${x.id}">Sil</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Rehberlik kaydı yok.</div>'}
 function renderReport(){const s=student();if(!s){$('#report').innerHTML='<div class="empty">Öğrenci seçin.</div>';return}const ex=exams(),st=studies(),w=wrongs();$('#report').innerHTML=`<div class="grid g3"><div><div class="muted small">Öğrenci</div><h2>${esc(s.name)}</h2><div>${esc(s.target||'Hedef belirtilmedi')}</div></div><div><div class="muted small">Toplam çalışma</div><h2>${(st.reduce((a,b)=>a+b.minutes,0)/60).toFixed(1)} saat</h2><div>${st.reduce((a,b)=>a+b.questions,0)} soru</div></div><div><div class="muted small">Deneme</div><h2>${ex.length}</h2><div>${w.length} yanlış soru</div></div></div>`}
 function loadSettings(){$('#examType').value=db.settings.examType||'YKS 2027';$('#examDate').value=db.settings.examDate||'';const d=Math.max(0,Math.ceil((new Date((db.settings.examDate||today())+'T12:00:00')-new Date(today()+'T12:00:00'))/86400000));$('#daysLeft').innerHTML=`<div class="card"><b>${d} gün</b> kaldı · ${esc(db.settings.examType||'YKS')}</div>`}
 
@@ -1558,7 +1604,7 @@ function renderCoachCenter(){
  const badges=[]; if(m.weekMins>=300)badges.push('🔥 5+ saatlik hafta'); if(m.questions>=100)badges.push('📚 100+ soru'); if(m.ex.length>=3)badges.push('🎯 3+ deneme'); if(m.w.length>=20)badges.push('🔁 20 yanlış arşivi'); if(m.last!=null&&m.prev!=null&&m.last>m.prev)badges.push('📈 Net yükselişi'); const streak=[]; for(let i=0;i<7;i++){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);if(m.st.some(x=>x.date===ds))streak.push(ds)} if(streak.length>=3)badges.push('🏃 3 günlük çalışma serisi'); $('#badgesBox').innerHTML=badges.length?badges.map(x=>`<span class="badge green" style="margin:4px">${x}</span>`).join(''):'<div class="empty">Henüz rozet kazanılmadı. Düzenli çalışma ile açılacak.</div>';
  const focus=topics.slice(0,3); $('#smartDay').innerHTML=focus.length?focus.map(([t,n],i)=>`<div class="between section"><div><b>${i+1}. ${esc(t)}</b><div class="small muted">Konu tekrarı + ${Math.max(20,n*10)} soru</div></div><span class="badge ${i===0?'red':'orange'}">${i===0?'Öncelikli':'Plan'}</span></div>`).join(''):'<div class="successbox">Veri az. Bugün genel tekrar + 40 soru önerilir.</div>';
  renderSmartCoachAdvice(m);
- const gs=(db.guidance||[]).filter(x=>x.studentId===sid()).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);$('#meetingBox').innerHTML=gs.length?gs.map(x=>`<div class="section"><div class="between"><b>${esc(x.date)} · ${esc(x.type)}</b><span class="badge ${x.status==='Uygulandı'?'green':'orange'}">${esc(x.status||'Takip')}</span></div><div class="small">${esc(x.action)}</div>${x.feedback?`<div class="small muted">${esc(x.feedback)}</div>`:''}</div>`).join(''):'<div class="empty">Henüz görüşme kaydı yok. Rehberlik bölümünden ekleyebilirsiniz.</div>';
+ const gs=(db.guidance||[]).filter(x=>x.studentId===sid()).sort((a,b)=>String(b.date??'').localeCompare(String(a.date??''))).slice(0,5);$('#meetingBox').innerHTML=gs.length?gs.map(x=>`<div class="section"><div class="between"><b>${esc(x.date)} · ${esc(x.type)}</b><span class="badge ${x.status==='Uygulandı'?'green':'orange'}">${esc(x.status||'Takip')}</span></div><div class="small">${esc(x.action)}</div>${x.feedback?`<div class="small muted">${esc(x.feedback)}</div>`:''}</div>`).join(''):'<div class="empty">Henüz görüşme kaydı yok. Rehberlik bölümünden ekleyebilirsiniz.</div>';
  $('#parentSummary').innerHTML=`<div class="grid g3"><div><b>Öğrenci</b><div class="section">${esc(m.s.name)}</div></div><div><b>Son net</b><div class="section">${m.last==null?'—':m.last.toFixed(2)}</div></div><div><b>Haftalık çalışma</b><div class="section">${(m.weekMins/60).toFixed(1)} saat</div></div></div><div class="successbox section"><b>Genel durum:</b> ${level[0]}. ${m.target?`Hedef ${m.target.toFixed(1)} net; mevcut ${m.current.toFixed(1)}.`:''} ${topics[0]?`Öncelikli konu: ${esc(topics[0][0])}.`:''}</div>`;
 }
 function generateSmartPlan(){
@@ -2411,7 +2457,12 @@ window.print=window.print||function(){};
 window.addEventListener('error',e=>{console.error(e.error||e.message)});
 document.addEventListener('input',e=>{if(e.target.id==='studentSearch'){window.__studentSearch=e.target.value;renderStudents()}});
 initNav();
-if(window.__yksSupabase){ window.__yksCloudStart(); } else { render(); }
+if(window.__yksSupabase){
+ window.__yksSupabase.auth.getSession().then(({data})=>{
+   if(data?.session)window.__yksCloudStart();
+   else render();
+ }).catch(()=>render());
+} else { render(); }
 })();
 
 
