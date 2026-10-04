@@ -610,6 +610,7 @@ body.coach-etut-mode .brand{font-size:18px}
   window.__yksCloudConfigured=!!client;
 
   function unlock(){ gate.style.display='none'; document.body.classList.remove('login-locked'); }
+  window.__yksUnlockApp=unlock;
   function setRole(role){
     roleInput.value=role;
     document.querySelectorAll('[data-login-role]').forEach(b=>b.classList.toggle('active',b.dataset.loginRole===role));
@@ -641,11 +642,11 @@ body.coach-etut-mode .brand{font-size:18px}
 
   if(cloudConfigured){
     client.auth.getSession().then(({data})=>{
-      if(data.session){ unlock(); window.__yksCloudStart?.(); }
+      if(data.session){ window.__yksCloudStart?.(); }
     });
     client.auth.onAuthStateChange((_event,session)=>{
       if(window.__yksStudentSession)return;
-      if(session){ unlock(); window.__yksCloudStart?.(); }
+      if(session){ window.__yksCloudStart?.(); }
       else { gate.style.display=''; document.body.classList.add('login-locked'); }
     });
   }else if(sessionStorage.getItem(KEY)==='1'){
@@ -676,7 +677,7 @@ body.coach-etut-mode .brand{font-size:18px}
     if(client){
       const {error:err}=await client.auth.signInWithPassword({email:user.value.trim(),password:pass.value});
       if(err){ error.textContent=err.message==='Invalid login credentials'?'E-posta veya şifre hatalı.':err.message; pass.value=''; pass.focus(); return; }
-      unlock(); window.__yksCloudStart?.();
+      window.__yksCloudStart?.();
     }else{
       if(user.value.trim()==='akdem' && pass.value==='159263'){
         sessionStorage.setItem(KEY,'1'); error.textContent=''; unlock(); window.__yksCloudStart?.();
@@ -1190,7 +1191,17 @@ async function cloudSaveNow(){
 function scheduleCloudSave(){if(document.body.classList.contains('student-mode'))return;if(!window.__yksSupabase||!cloudUser||cloudLoading||!cloudLoadSucceeded)return;clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(cloudSaveNow,500);}
 window.cloudSyncNow=async()=>{if(!window.__yksSupabase)return alert('Supabase bağlantısı henüz yapılandırılmamış.');if(!cloudUser)return alert('Önce bulut hesabıyla giriş yapın.');await cloudSaveNow();alert(cloudMode==='coach'?'Lise Etüt verileri buluta senkronize edildi.':'Veriler buluta senkronize edildi.');};
 window.cloudLogout=async()=>{if(window.__yksSupabase){await window.__yksSupabase.auth.signOut();location.reload();}else alert('Bulut hesabı bağlı değil.');};
-window.__yksCloudStart=async()=>{if(window.__yksSupabase){const ok=await cloudLoad();render();if(ok&&cloudMode==='coach')applyCoachUi();return;}render();};
+window.__yksCloudStart=async()=>{
+  if(window.__yksSupabase){
+    const ok=await cloudLoad();
+    render();
+    if(ok&&cloudMode==='coach')applyCoachUi();
+    if(ok && typeof window.__yksUnlockApp==='function')window.__yksUnlockApp();
+    return;
+  }
+  render();
+  if(typeof window.__yksUnlockApp==='function')window.__yksUnlockApp();
+};
 // Eski/bozuk konu kayıtlarında görünen "V2" ibaresini konu adı olarak kullanma.
 function cleanLegacyV2TopicData(){
  const clean=(x)=>{if(!x||typeof x!=='object')return; if(typeof x.topic==='string'&&x.topic.trim().toLocaleUpperCase('tr-TR')==='V2')x.topic='';};
