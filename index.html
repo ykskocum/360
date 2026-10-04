@@ -506,6 +506,12 @@ body.student-mode #coachLogoutBtn{display:none!important}
 .report-parent .parent-chart-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2f6fed;margin-right:5px}
 </style>
 
+<style id="etut-topbar-cleanup">
+body.etut-page-active #studentSelect,
+body.etut-page-active .top-actions > .btn.primary{display:none!important;}
+body.etut-page-active .top-actions{display:flex!important;justify-content:flex-end!important;width:auto!important;}
+@media(max-width:780px){body.etut-page-active .top-actions{grid-column:auto!important;width:auto!important;display:flex!important;justify-self:end!important;}}
+</style>
 </head>
 <body>
 <div id="loginGate" aria-modal="true" role="dialog">
@@ -648,6 +654,9 @@ body.student-mode #coachLogoutBtn{display:none!important}
       <button data-page="topics">Konu Takibi</button>
       <button data-page="wrong">Yanlışlar & Tekrar</button>
     </div></details>
+    <details class="nav-group" data-group="etut"><summary>🏫 Lise Etüt Takibi</summary><div class="subnav">
+      <button data-page="etut">Etüt Merkezi</button>
+    </div></details>
     <details class="nav-group" data-group="settings"><summary>⚙️ Sistem</summary><div class="subnav">
       <button data-page="settings">Ayarlar</button>
     </div></details>
@@ -657,7 +666,7 @@ body.student-mode #coachLogoutBtn{display:none!important}
 <main class="main">
   <div class="topbar">
     <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Menüyü aç">☰ <span>Menü</span></button>
-    <div><h1 id="pageTitle">Dashboard</h1><div class="muted small">YKS hazırlık sürecini tek ekrandan yönet.</div></div>
+    <div><h1 id="pageTitle">Dashboard</h1><div id="pageSubtitle" class="muted small">YKS hazırlık sürecini tek ekrandan yönet.</div></div>
     <div id="studentModeBar" class="row" style="margin-left:auto;align-items:center">
   <span class="badge green">🎓 Öğrenci Modu</span>
   <button class="btn ghost" type="button" onclick="studentLogout()">Çıkış Yap</button>
@@ -835,6 +844,21 @@ body.student-mode #coachLogoutBtn{display:none!important}
 
   <section class="page" id="page-reports">
     <div class="card"><div class="between"><div><h3>Öğrenci Raporu</h3><div class="muted small">Seçili öğrenci için yazdırılabilir özet.</div></div><button class="btn primary" onclick="window.print()">🖨️ Yazdır</button></div><div id="report"></div></div>
+  </section>
+
+  <section class="page" id="page-etut">
+    <div class="dashboard-intro"><div><div class="eyebrow">LİSE ETÜT TAKİBİ</div><h2>Akşam etütlerini tek ekranda takip et</h2><p>9, 10, 11 ve 12. sınıf öğrencileri için bağımsız etüt, soru, kitap ve veli raporu alanı.</p></div><span class="badge">Bağımsız Modül</span></div>
+    <div class="grid g4 section" id="etutStats"></div>
+    <div class="card section"><div class="between"><div><h3>👥 Etüt Öğrencileri</h3><div class="muted small">Bu liste YKS öğrenci modüllerinden bağımsız tutulur.</div></div><button class="btn primary" type="button" onclick="etutToggle('etutStudentAdd')">+ Öğrenci Ekle</button></div>
+      <div id="etutStudentAdd" style="display:none" class="section"><form id="etutStudentForm" class="formgrid three"><div><label>Ad Soyad</label><input name="name" required></div><div><label>Sınıf</label><select name="grade"><option>9</option><option>10</option><option>11</option><option>12</option></select></div><div><label>Veli Telefonu</label><input name="parentPhone"></div><div><label>Okul</label><input name="school"></div><div><label>Sorumlu Koç</label><input name="coach" placeholder="Koç adı"></div><div style="align-self:end"><button class="btn primary" type="submit">Kaydet</button></div></form></div>
+      <div class="row section"><select id="etutGradeFilter" style="max-width:170px" onchange="renderEtut()"><option value="">Tüm sınıflar</option><option value="9">9. Sınıf</option><option value="10">10. Sınıf</option><option value="11">11. Sınıf</option><option value="12">12. Sınıf</option></select><select id="etutStudentFilter" style="max-width:280px" onchange="renderEtut()"></select></div><div id="etutStudentTable" class="section"></div>
+    </div>
+    <div class="grid g2 section">
+      <div class="card"><div class="between"><div><h3>⏱️ Etüt Kaydı</h3><div class="muted small">Ders, konu, süre ve soru performansı.</div></div></div><form id="etutSessionForm" class="formgrid section"><div><label>Öğrenci</label><select name="studentId" id="etutSessionStudent" required></select></div><div><label>Tarih</label><input name="date" type="date" required></div><div><label>Ders</label><input name="subject" required></div><div><label>Konu</label><input name="topic"></div><div><label>Süre (dk)</label><input name="minutes" type="number" min="0"></div><div><label>Çözülen soru</label><input name="questions" type="number" min="0"></div><div><label>Doğru</label><input name="correct" type="number" min="0"></div><div><label>Yanlış</label><input name="wrong" type="number" min="0"></div><div><label>Boş</label><input name="blank" type="number" min="0"></div><div><label>Durum</label><select name="status"><option>Tamamlandı</option><option>Kısmen</option><option>Katılmadı</option></select></div><div style="grid-column:1/-1"><label>Koç Notu</label><textarea name="note"></textarea></div><div><button class="btn primary" type="submit">Etüdü Kaydet</button></div></form></div>
+      <div class="card"><h3>📚 Kitap Okuma</h3><form id="etutBookForm" class="formgrid section"><div><label>Öğrenci</label><select name="studentId" id="etutBookStudent" required></select></div><div><label>Tarih</label><input name="date" type="date" required></div><div><label>Kitap</label><input name="book" required></div><div><label>Okunan Sayfa</label><input name="pages" type="number" min="0"></div><div><label>Süre (dk)</label><input name="minutes" type="number" min="0"></div><div style="align-self:end"><button class="btn primary" type="submit">Okumayı Kaydet</button></div></form><div id="etutBookSummary" class="section"></div></div>
+    </div>
+    <div class="grid g2 section"><div class="card"><h3>📊 Haftalık Takip</h3><div id="etutWeek"></div></div><div class="card"><div class="between"><div><h3>👨‍👩‍👧 Haftalık Veli Karnesi</h3><div class="muted small">Etüt katılımı, süre, soru, dersler ve kitap okuma özeti.</div></div><button class="btn" type="button" onclick="etutPrintParent()">🖨️ Yazdır</button></div><div id="etutParentReport" class="section"></div></div></div>
+    <div class="card section"><div class="between"><div><h3>🔐 Etüt Yetkilileri</h3><div class="muted small">Koç adı, kullanıcı adı ve hangi öğrencileri takip edeceği burada yönetilir. Giriş yetkisi için Supabase Auth bağlantısı gerekir.</div></div><button class="btn" type="button" onclick="etutToggle('etutCoachAdd')">+ Yetkili Ekle</button></div><div id="etutCoachAdd" style="display:none" class="section"><form id="etutCoachForm" class="formgrid three"><div><label>Koç Adı</label><input name="name" required></div><div><label>Kullanıcı Adı / E-posta</label><input name="username" required></div><div><label>Yetki</label><select name="permission"><option value="own">Sadece kendi öğrencileri</option><option value="all">Tüm lise etütleri</option></select></div><div style="align-self:end"><button class="btn primary" type="submit">Yetkiliyi Kaydet</button></div></form></div><div id="etutCoachTable" class="section"></div></div>
   </section>
 
   <section class="page" id="page-settings">
@@ -1039,7 +1063,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const net=(c,w,b)=>+(Number(c||0)-Number(w||0)*.25).toFixed(2);
-let db={students:[],exams:[],studies:[],tasks:[],plans:[],wrongs:[],topics:[],guidance:[],settings:{examType:'YKS 2027',examDate:'2027-06-19'},selected:null};
+let db={students:[],exams:[],studies:[],tasks:[],plans:[],wrongs:[],topics:[],guidance:[],etutStudents:[],etutSessions:[],etutBooks:[],etutCoaches:[],settings:{examType:'YKS 2027',examDate:'2027-06-19'},selected:null};
 try{db=JSON.parse(localStorage.getItem(KEY))||db}catch(e){window.__yksData=window.__yksData||null;try{if(window.__yksData)db=JSON.parse(window.__yksData)}catch(_) {}}
 let cloudUser=null;
 let cloudSaveTimer=null;
@@ -1080,9 +1104,9 @@ async function cloudLoad(){
   if(!incoming || typeof incoming!=='object')throw new Error('Buluttaki uygulama verisi okunamadı.');
 
   // Eski/yeni sürüm farklarında eksik alanlar yüzünden veri görünmez olmasın.
-  const defaults={students:[],exams:[],studies:[],tasks:[],plans:[],wrongs:[],topics:[],guidance:[],settings:{examType:'YKS 2027',examDate:'2027-06-19'},selected:null};
+  const defaults={students:[],exams:[],studies:[],tasks:[],plans:[],wrongs:[],topics:[],guidance:[],etutStudents:[],etutSessions:[],etutBooks:[],etutCoaches:[],settings:{examType:'YKS 2027',examDate:'2027-06-19'},selected:null};
   db={...defaults,...incoming,settings:{...defaults.settings,...(incoming.settings||{})}};
-  ['students','exams','studies','tasks','plans','wrongs','topics','guidance'].forEach(k=>{if(!Array.isArray(db[k]))db[k]=[];});
+  ['students','exams','studies','tasks','plans','wrongs','topics','guidance','etutStudents','etutSessions','etutBooks','etutCoaches'].forEach(k=>{if(!Array.isArray(db[k]))db[k]=[];});
 
   // Kayıtlı selected artık yoksa ilk öğrenciyi seç.
   if(!db.students.some(x=>x?.id===db.selected))db.selected=db.students[0]?.id||null;
@@ -1146,7 +1170,7 @@ function sid(){return student()?.id||null}
 function openModal(id){const el=$('#'+id);if(!el)return;el.classList.add('open');if(id==='studentModal'){const f=$('#studentForm');if(f){f.reset();f.editId.value='';}$('#studentModalTitle').textContent='Öğrenci Ekle';}if(id==='examModal')buildSubjectInputs();if(id==='studyModal')$('#studyForm [name=date]').value=today();if(id==='planModal')$('#planForm [name=date]').value=today();if(id==='wrongModal')$('#wrongForm [name=reviewDate]').value=today();if(id==='guidanceModal')$('#guidanceForm [name=date]').value=today()}
 function closeModal(id){$('#'+id)?.classList.remove('open')}
 window.openModal=openModal;window.closeModal=closeModal;window.autoGeneratePlan=autoGeneratePlan;
-function nav(page){if(document.body.classList.contains('student-mode')&&page!=='studentpanel')page='studentpanel';$$('.page').forEach(x=>x.classList.toggle('active',x.id==='page-'+page));$$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===page));const b=$('#nav button[data-page="'+page+'"]');if(b){$('#pageTitle').textContent=b.textContent.trim();const group=b.closest('.nav-group');$$('#nav .nav-group').forEach(g=>{g.open=(g===group)});}}
+function nav(page){$$('.page').forEach(x=>x.classList.toggle('active',x.id==='page-'+page));$$('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===page));const b=$('#nav button[data-page="'+page+'"]');if(b){$('#pageTitle').textContent=b.textContent.trim();const sub=$('#pageSubtitle');if(sub)sub.textContent=(page==='etut'?'':'YKS hazırlık sürecini tek ekrandan yönet.');const group=b.closest('.nav-group');$$('#nav .nav-group').forEach(g=>{g.open=(g===group)});}}
 function initNav(){$$('#nav button').forEach(b=>b.addEventListener('click',()=>{nav(b.dataset.page);document.body.classList.remove('mobile-nav-open')}));const mb=document.getElementById('mobileMenuBtn'),ov=document.getElementById('mobileNavOverlay');if(mb)mb.addEventListener('click',()=>document.body.classList.toggle('mobile-nav-open'));if(ov)ov.addEventListener('click',()=>document.body.classList.remove('mobile-nav-open'));nav('dashboard')}
 function formData(form){return Object.fromEntries(new FormData(form).entries())}
 function selectedRecords(key){return (db[key]||[]).filter(x=>x.studentId===sid())}
@@ -2408,7 +2432,7 @@ if(__yksOriginalPersist){
   }
 }
 
-function render(){try{yksEnsureLinks()}catch(e){console.warn('Entegre takip:',e)}renderCoachCenter();renderStudentSelect();renderV2();renderStudentPanel();renderStudentDetail();renderDashboard();renderStudents();renderExams();renderAnalysis();renderStudy();renderTasks();renderPlan();renderWrong();renderReview();renderTopics();renderGuidance();renderReport();loadSettings()}
+function render(){try{yksEnsureLinks()}catch(e){console.warn('Entegre takip:',e)}renderCoachCenter();renderStudentSelect();renderV2();renderStudentPanel();renderStudentDetail();renderDashboard();renderStudents();renderExams();renderAnalysis();renderStudy();renderTasks();renderPlan();renderWrong();renderReview();renderTopics();renderGuidance();renderReport();renderEtut();loadSettings()}
 
 // Global action system
 $$('[onclick]').forEach(el=>{const code=el.getAttribute('onclick')||'';if(/^openModal\(/.test(code)){const m=code.match(/openModal\('([^']+)'\)/);if(m){el.removeAttribute('onclick');el.dataset.modal=m[1]}}else if(/^closeModal\(/.test(code)){const m=code.match(/closeModal\('([^']+)'\)/);if(m){el.removeAttribute('onclick');el.dataset.close=m[1]}}});
@@ -2634,3 +2658,25 @@ async function read8051Optic(){
 
 </body>
 </html>
+<script id="etut-module-v1">
+(function(){
+ const E=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+ const U=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+ const T=()=>new Date().toISOString().slice(0,10);
+ const weekStart=()=>{const d=new Date();const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);return d.toISOString().slice(0,10)};
+ window.etutToggle=id=>{const x=document.getElementById(id);if(x)x.style.display=x.style.display==='none'?'block':'none'};
+ function ensure(){db.etutStudents=db.etutStudents||[];db.etutSessions=db.etutSessions||[];db.etutBooks=db.etutBooks||[];db.etutCoaches=db.etutCoaches||[]}
+ function selected(){const id=document.getElementById('etutStudentFilter')?.value;return id||db.etutStudents?.[0]?.id||''}
+ window.renderEtut=function(){ensure();const gf=document.getElementById('etutGradeFilter')?.value||'';let list=db.etutStudents.filter(x=>!gf||String(x.grade)===gf);const sf=document.getElementById('etutStudentFilter');if(sf){const old=sf.value;sf.innerHTML=list.length?list.map(x=>`<option value="${x.id}">${E(x.name)} · ${E(x.grade)}. sınıf</option>`).join(''):'<option value="">Öğrenci yok</option>';if(list.some(x=>x.id===old))sf.value=old}const id=selected();
+  const opts=db.etutStudents.map(x=>`<option value="${x.id}" ${x.id===id?'selected':''}>${E(x.name)} · ${E(x.grade)}. sınıf</option>`).join('');['etutSessionStudent','etutBookStudent'].forEach(k=>{const el=document.getElementById(k);if(el){const old=el.value;el.innerHTML=opts||'<option value="">Öğrenci ekleyin</option>';if(db.etutStudents.some(x=>x.id===old))el.value=old}});
+  const ws=weekStart(),ss=db.etutSessions.filter(x=>x.date>=ws),bs=db.etutBooks.filter(x=>x.date>=ws);const mins=ss.reduce((a,x)=>a+(+x.minutes||0),0),qs=ss.reduce((a,x)=>a+(+x.questions||0),0),pages=bs.reduce((a,x)=>a+(+x.pages||0),0);const st=document.getElementById('etutStats');if(st)st.innerHTML=[['Etüt Öğrencisi',db.etutStudents.length,'Aktif kayıt'],['Bu Hafta Etüt',ss.length,'Oturum'],['Etüt Süresi',(mins/60).toFixed(1)+' sa','Bu hafta'],['Kitap',pages+' sf','Bu hafta']].map(x=>`<div class="card stat"><div class="label">${x[0]}</div><div class="value">${x[1]}</div><div class="sub">${x[2]}</div></div>`).join('');
+  const tb=document.getElementById('etutStudentTable');if(tb)tb.innerHTML=list.length?`<table><thead><tr><th>Öğrenci</th><th>Sınıf</th><th>Okul</th><th>Koç</th><th>Bu hafta</th><th></th></tr></thead><tbody>${list.map(x=>{const a=ss.filter(y=>y.studentId===x.id);return `<tr><td><b>${E(x.name)}</b><div class="small muted">${E(x.parentPhone||'')}</div></td><td>${E(x.grade)}. Sınıf</td><td>${E(x.school||'—')}</td><td>${E(x.coach||'—')}</td><td>${a.length} etüt · ${a.reduce((z,y)=>z+(+y.minutes||0),0)} dk</td><td><button class="btn danger" onclick="etutDelete('student','${x.id}')">Sil</button></td></tr>`}).join('')}</tbody></table>`:'<div class="empty">Henüz etüt öğrencisi eklenmedi.</div>';
+  renderEtutDetail(id,ws);
+ };
+ function renderEtutDetail(id,ws){const stu=db.etutStudents.find(x=>x.id===id),ss=db.etutSessions.filter(x=>x.studentId===id&&x.date>=ws).sort((a,b)=>b.date.localeCompare(a.date)),bs=db.etutBooks.filter(x=>x.studentId===id&&x.date>=ws).sort((a,b)=>b.date.localeCompare(a.date));const w=document.getElementById('etutWeek');if(w)w.innerHTML=stu?`<div class="big">${(ss.reduce((a,x)=>a+(+x.minutes||0),0)/60).toFixed(1)} sa</div><div class="muted small">${ss.length} etüt · ${ss.reduce((a,x)=>a+(+x.questions||0),0)} soru</div><div class="section">${ss.map(x=>`<div class="between" style="padding:8px 0;border-bottom:1px solid var(--border)"><div><b>${E(x.subject)}</b> · ${E(x.topic||'')}</div><span class="small">${E(x.date)} · ${+x.minutes||0} dk</span></div>`).join('')||'<div class="empty">Bu hafta etüt yok.</div>'}</div>`:'<div class="empty">Öğrenci seçin.</div>';const b=document.getElementById('etutBookSummary');if(b)b.innerHTML=bs.length?bs.map(x=>`<div class="between" style="padding:8px 0;border-bottom:1px solid var(--border)"><b>${E(x.book)}</b><span>${+x.pages||0} sf · ${+x.minutes||0} dk</span></div>`).join(''):'<div class="empty">Bu hafta kitap kaydı yok.</div>';const r=document.getElementById('etutParentReport');if(r)r.innerHTML=stu?`<div class="report-note"><b>${E(stu.name)} · ${E(stu.grade)}. Sınıf</b><br><span class="small">Hafta başlangıcı: ${ws}</span></div><div class="grid g2 section"><div><div class="muted small">Etüt Katılımı</div><b>${ss.filter(x=>x.status==='Tamamlandı').length}/${ss.length}</b></div><div><div class="muted small">Toplam Süre</div><b>${ss.reduce((a,x)=>a+(+x.minutes||0),0)} dk</b></div><div><div class="muted small">Çözülen Soru</div><b>${ss.reduce((a,x)=>a+(+x.questions||0),0)}</b></div><div><div class="muted small">Kitap Okuma</div><b>${bs.reduce((a,x)=>a+(+x.pages||0),0)} sayfa</b></div></div><div class="section"><b>Dersler:</b> ${[...new Set(ss.map(x=>x.subject).filter(Boolean))].map(E).join(', ')||'—'}</div><div class="section small"><b>Koç notları:</b><br>${ss.map(x=>x.note).filter(Boolean).map(E).join('<br>')||'Bu hafta için not girilmedi.'}</div>`:'<div class="empty">Öğrenci seçin.</div>';const c=document.getElementById('etutCoachTable');if(c)c.innerHTML=db.etutCoaches.length?`<table><thead><tr><th>Koç</th><th>Kullanıcı</th><th>Yetki</th><th></th></tr></thead><tbody>${db.etutCoaches.map(x=>`<tr><td>${E(x.name)}</td><td>${E(x.username)}</td><td>${x.permission==='all'?'Tüm lise etütleri':'Sadece kendi öğrencileri'}</td><td><button class="btn danger" onclick="etutDelete('coach','${x.id}')">Sil</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Henüz etüt yetkilisi eklenmedi.</div>'}
+ window.etutDelete=(type,id)=>{if(!confirm('Bu kaydı silmek istediğinize emin misiniz?'))return;ensure();if(type==='student'){db.etutStudents=db.etutStudents.filter(x=>x.id!==id);db.etutSessions=db.etutSessions.filter(x=>x.studentId!==id);db.etutBooks=db.etutBooks.filter(x=>x.studentId!==id)}else db.etutCoaches=db.etutCoaches.filter(x=>x.id!==id);persist()};
+ window.etutPrintParent=()=>{const r=document.getElementById('etutParentReport');if(!r)return;const w=window.open('','_blank','width=900,height=900');w.document.write(`<html><head><title>Haftalık Veli Karnesi</title><style>body{font-family:Arial;padding:35px;color:#172033}h1{font-size:24px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.section{margin-top:18px}.muted,.small{color:#667085}.report-note{padding:18px;background:#f3f6fa;border-radius:12px}b{font-size:16px}</style></head><body><h1>YKS Koçum · Haftalık Etüt Veli Karnesi</h1>${r.innerHTML}</body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),250)};
+ document.addEventListener('submit',e=>{if(e.target.id==='etutStudentForm'){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));db.etutStudents.push({id:U(),...f,created:T()});e.target.reset();persist()}if(e.target.id==='etutSessionForm'){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));db.etutSessions.push({id:U(),...f,minutes:+f.minutes||0,questions:+f.questions||0,correct:+f.correct||0,wrong:+f.wrong||0,blank:+f.blank||0});e.target.reset();e.target.date.value=T();persist()}if(e.target.id==='etutBookForm'){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));db.etutBooks.push({id:U(),...f,pages:+f.pages||0,minutes:+f.minutes||0});e.target.reset();e.target.date.value=T();persist()}if(e.target.id==='etutCoachForm'){e.preventDefault();const f=Object.fromEntries(new FormData(e.target));db.etutCoaches.push({id:U(),...f});e.target.reset();persist()}});
+ document.addEventListener('DOMContentLoaded',()=>{['#etutSessionForm [name=date]','#etutBookForm [name=date]'].forEach(q=>{const x=document.querySelector(q);if(x&&!x.value)x.value=T()})});
+})();
+</script>
