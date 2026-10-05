@@ -634,6 +634,67 @@ body.etut-page-active #page-etut>.card:first-child>.etv2-toolbar:first-child{min
 @media(max-width:780px){body.etut-page-active #pageSubtitle{white-space:normal!important}.etv4-helper{font-size:11px}.etv2-actions{width:100%}.etv2-actions>.btn{flex:1}.etv4-attention{align-items:flex-start}.etv4-status-actions{align-items:flex-end}.etv4-status{white-space:normal}.etv4-metrics{gap:5px}.etv2-class-title span{font-size:9px!important}.etv3-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 </style>
 </head>
+
+<style id="etut-safe-visual-patch">
+/* YKS Koçum — Etüt Merkezi güvenli görsel yaması. Yalnızca #page-etut kapsamındadır. */
+#page-etut .etv4-control-card{border:1px solid #e5eaf2;box-shadow:0 8px 24px rgba(15,23,42,.045);border-radius:16px;background:#fff}
+#page-etut .etv3-toolbar{column-gap:14px!important;row-gap:10px!important}
+#page-etut .etv3-filters{gap:8px!important;align-items:center!important}
+#page-etut .etv4-view-label{display:inline-flex;align-items:center;height:40px;padding:0 2px;color:#98a2b3;font-size:10px;font-weight:850;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+#page-etut #etutGroupToggle{min-width:108px;justify-content:center;align-items:center}
+
+/* Günün dikkat özeti: kompakt, premium ve kurumsal */
+#page-etut #etutAttention.etv4-attention{position:relative;display:flex;align-items:center;gap:12px;margin:14px 0 2px;padding:14px 16px;border:1px solid #e5eaf2;border-left:4px solid #f59e0b;border-radius:15px;background:#fff;box-shadow:0 5px 18px rgba(15,23,42,.035);color:#475467;min-height:62px}
+#page-etut #etutAttention.etv4-attention:has(.etv4-attention-icon.ok){border-left-color:#22c55e}
+#page-etut #etutAttention .etv4-attention-icon{width:34px;height:34px;border-radius:10px;font-size:15px;box-shadow:inset 0 0 0 1px rgba(194,65,12,.08)}
+#page-etut #etutAttention .etv4-attention-icon.ok{box-shadow:inset 0 0 0 1px rgba(21,128,61,.08)}
+#page-etut #etutAttention>div:last-child{min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:16px}
+#page-etut #etutAttention>div:last-child>b{margin:0;color:#101828;font-size:12px;font-weight:850;letter-spacing:.015em;text-transform:uppercase;white-space:nowrap}
+#page-etut #etutAttention>div:last-child>div{display:flex;justify-content:flex-end;align-items:center;gap:7px;margin:0;flex-wrap:wrap}
+#page-etut #etutAttention .danger,#page-etut #etutAttention .warning{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;border-radius:999px;font-size:10.5px;font-weight:750;line-height:1.2;white-space:nowrap}
+#page-etut #etutAttention .danger{background:#fff1f2;border:1px solid #ffe4e6;color:#b42318}
+#page-etut #etutAttention .warning{background:#fff7ed;border:1px solid #fed7aa;color:#9a4e08}
+#page-etut #etutAttention i{display:none}
+
+/* Sınıf başlıkları ve öğrenci satırları */
+#page-etut #etutDailyList{margin-top:15px}
+#page-etut .etv2-class-group{margin-top:18px}
+#page-etut .etv2-class-title{min-height:34px;padding:0 4px 9px!important;gap:10px!important}
+#page-etut .etv2-class-title strong{color:#344054;font-size:11px;letter-spacing:.085em}
+#page-etut .etv2-class-title span{margin-left:auto;white-space:nowrap}
+#page-etut .etv2-student{border:1px solid #e5eaf2!important;border-left:3px solid #3b82f6!important;border-radius:13px!important;padding:12px 14px!important;margin-top:8px!important;background:#fff!important;box-shadow:0 2px 8px rgba(15,23,42,.025)!important}
+#page-etut .etv2-student.state-warning{border-left-color:#f59e0b!important}
+#page-etut .etv2-student.state-danger{border-left-color:#ef4444!important}
+#page-etut .etv2-student.state-normal{border-left-color:#22c55e!important}
+#page-etut .etv2-student:hover{border-color:#d6dce7!important;box-shadow:0 7px 18px rgba(15,23,42,.05)!important}
+#page-etut .etv2-name{font-size:14px!important;font-weight:800!important;letter-spacing:-.01em}
+#page-etut .etv2-grade{padding:3px 7px!important;border-radius:999px!important;font-size:10px!important}
+#page-etut .etv2-student-actions{gap:6px!important}
+#page-etut .etv2-student-actions .btn{min-height:35px;padding:7px 10px!important;border-radius:9px!important;font-size:10.5px!important;box-shadow:none!important;white-space:nowrap}
+#page-etut .etv2-student-actions .btn.primary{background:#5b4ce2!important;color:#fff!important;border-color:#5b4ce2!important}
+#page-etut .etv2-detail-btn{background:#fff!important;color:#475467!important;border:1px solid #d8deea!important}
+#page-etut .etv2-inline-warn{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:#fff7ed;color:#9a4e08;font-size:10px;font-weight:750}
+
+/* Veli raporu alanını görsel olarak ayır */
+#page-etut .etv3-parent-report{margin-top:20px!important;border-color:#e5eaf2!important;box-shadow:0 6px 20px rgba(15,23,42,.035)!important}
+
+@media(max-width:780px){
+  #page-etut .etv3-filters{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px!important}
+  #page-etut .etv4-view-label{display:none}
+  #page-etut #etutGroupToggle{grid-column:1/-1;width:100%;min-width:0}
+  #page-etut #etutAttention.etv4-attention{align-items:flex-start;padding:13px 12px;gap:10px}
+  #page-etut #etutAttention>div:last-child{display:block}
+  #page-etut #etutAttention>div:last-child>b{display:block;white-space:normal;line-height:1.35;margin:1px 0 7px}
+  #page-etut #etutAttention>div:last-child>div{justify-content:flex-start;gap:6px}
+  #page-etut #etutAttention .danger,#page-etut #etutAttention .warning{white-space:normal}
+  #page-etut .etv2-class-title{align-items:flex-start!important;flex-direction:column!important}
+  #page-etut .etv2-class-title span{margin-left:0;white-space:normal}
+  #page-etut .etv2-student{padding:11px 12px!important}
+  #page-etut .etv2-student-actions{width:100%;justify-content:flex-start!important;margin-top:7px;padding-top:8px;border-top:1px solid #f0f2f5}
+  #page-etut .etv2-student-actions .btn{flex:0 0 auto}
+}
+</style>
+
 <body>
 <div id="loginGate" aria-modal="true" role="dialog">
   <div class="login-box">
